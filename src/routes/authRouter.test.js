@@ -44,3 +44,8 @@ test('update user', async () => {
     expect(updateUserRes.body.email).toBe('new@new.com');
 });
 
+test('register error', async () => {
+    const registerRes = await request(app).post('/api/auth').send({});
+    expect(registerRes.status).toBe(400);
+    expect(registerRes.body.message).toBe('name, email, and password are required');
+});
