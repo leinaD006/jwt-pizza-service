@@ -31,3 +31,16 @@ test('logout', async () => {
     expect(logoutRes.body.message).toBe('logout successful');
 });
 
+test('update user', async () => {
+    const updateUserRes = await request(app)
+        .put('/api/auth/' + testUserId)
+        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        .send({
+            email: 'new@new.com',
+            password: 'b',
+        });
+
+    expect(updateUserRes.status).toBe(200);
+    expect(updateUserRes.body.email).toBe('new@new.com');
+});
+
