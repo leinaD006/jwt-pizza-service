@@ -22,3 +22,12 @@ test('login', async () => {
     };
   expect(loginRes.body.user).toMatchObject(user);
 });
+
+test('logout', async () => {
+    const logoutRes = await request(app)
+        .delete('/api/auth')
+        .set('Authorization', `Bearer ${testUserAuthToken}`);
+    expect(logoutRes.status).toBe(200);
+    expect(logoutRes.body.message).toBe('logout successful');
+});
+
