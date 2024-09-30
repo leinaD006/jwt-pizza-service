@@ -34,16 +34,18 @@ test('logout', async () => {
 });
 
 test('update user', async () => {
+    const testEmail = Math.random().toString(36).substring(2, 12) + '@test.com';
+
     const updateUserRes = await request(app)
         .put('/api/auth/' + testUserId)
         .set('Authorization', `Bearer ${testUserAuthToken}`)
         .send({
-            email: 'new@new.com',
+            email: testEmail,
             password: 'b',
         });
 
     expect(updateUserRes.status).toBe(200);
-    expect(updateUserRes.body.email).toBe('new@new.com');
+    expect(updateUserRes.body.email).toBe(testEmail);
 });
 
 test('register error', async () => {
