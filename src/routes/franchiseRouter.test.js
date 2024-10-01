@@ -127,3 +127,13 @@ test('delete franchise', async () => {
     expect(franchiseRes.status).toBe(200);
     expect(franchiseRes.body.message).toBe('franchise deleted');
 });
+
+test('delete store', async () => {
+    const storeRes = await request(app)
+        .delete(`/api/franchise/${testFranchise.id}/store/${testStore.id}`)
+        .set('Authorization', `Bearer ${adminUser.token}`)
+        .send();
+
+    expect(storeRes.status).toBe(200);
+    expect(storeRes.body.message).toBe('store deleted');
+});
