@@ -117,3 +117,13 @@ test('get user franchises', async () => {
     const franchises = franchiseRes.body;
     expect(franchises).toContainEqual(expectedFranchise);
 });
+
+test('delete franchise', async () => {
+    const franchiseRes = await request(app)
+        .delete(`/api/franchise/${testFranchise.id}`)
+        .set('Authorization', `Bearer ${adminUser.token}`)
+        .send();
+
+    expect(franchiseRes.status).toBe(200);
+    expect(franchiseRes.body.message).toBe('franchise deleted');
+});
