@@ -25,7 +25,7 @@ async function createFranchise() {
 
     const franchiseRes = await request(app)
         .post('/api/franchise')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${adminUser.token}`)
         .send(testFranchise);
 
     testFranchise.id = franchiseRes.body.id;
@@ -41,7 +41,7 @@ async function createStore() {
 
     const storeRes = await request(app)
         .post(`/api/franchise/${testFranchise.id}/store`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${adminUser.token}`)
         .send(store);
 
     store.id = storeRes.body.id;
@@ -50,15 +50,15 @@ async function createStore() {
 }
 
 let adminUser;
-let adminToken;
-
 let testFranchise;
 let testStore;
 
 beforeAll(async () => {
     adminUser = await createAdminUser();
     const loginRes = await request(app).put('/api/auth').send(adminUser);
-    adminToken = loginRes.body.token;
+
+    adminUser.id = loginRes.body.user.id;
+    adminUser.token = loginRes.body.token;
 
     testFranchise = await createFranchise();
 
@@ -84,5 +84,36 @@ test('get franchises', async () => {
         ],
     };
 
+    expect(franchises).toContainEqual(expectedFranchise);
+});
+
+test('get user franchises', async () => {
+    const franchiseRes = await request(app)
+        .get(`/api/franchise/${adminUser.id}`)
+        .set('Authorization', `Bearer ${adminUser.token}`)
+        .send();
+
+    expect(franchiseRes.status).toBe(200);
+
+    let expectedFranchise = {
+        id: testFranchise.id,
+        name: testFranchise.name,
+        admins: [
+            {
+                email: adminUser.email,
+                id: adminUser.id,
+                name: adminUser.name,
+            },
+        ],
+        stores: [
+            {
+                id: testStore.id,
+                name: testStore.name,
+                totalRevenue: 0,
+            },
+        ],
+    };
+
+    const franchises = franchiseRes.body;
     expect(franchises).toContainEqual(expectedFranchise);
 });
