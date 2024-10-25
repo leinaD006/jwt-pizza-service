@@ -5,7 +5,7 @@ const testUser = { name: 'pizza diner', email: 'reg@test.com', password: 'a' };
 let testUserAuthToken;
 let testUserId;
 
-beforeAll(async () => {
+beforeEach(async () => {
     testUser.email = Math.random().toString(36).substring(2, 12) + '@test.com';
     const registerRes = await request(app).post('/api/auth').send(testUser);
     testUserAuthToken = registerRes.body.token;
@@ -28,21 +28,25 @@ test('login', async () => {
 test('logout', async () => {
     const logoutRes = await request(app)
         .delete('/api/auth')
-        .set('Authorization', `Bearer ${testUserAuthToken}`);
+        .auth(testUserAuthToken, { type: 'bearer' });
     expect(logoutRes.status).toBe(200);
     expect(logoutRes.body.message).toBe('logout successful');
 });
 
 test('update user', async () => {
+    console.log(testUserId);
+    console.log(testUserAuthToken);
     const testEmail = Math.random().toString(36).substring(2, 12) + '@test.com';
 
     const updateUserRes = await request(app)
         .put(`/api/auth/${testUserId}`)
-        .set('Authorization', `Bearer ${testUserAuthToken}`)
+        .auth(testUserAuthToken, { type: 'bearer' })
         .send({
             email: testEmail,
             password: 'b',
         });
+
+    //   console.log(updateUserRes.body);
 
     expect(updateUserRes.status).toBe(200);
     expect(updateUserRes.body.email).toBe(testEmail);

@@ -53,7 +53,7 @@ let adminUser;
 let testFranchise;
 let testStore;
 
-beforeAll(async () => {
+beforeEach(async () => {
     adminUser = await createAdminUser();
     const loginRes = await request(app).put('/api/auth').send(adminUser);
 

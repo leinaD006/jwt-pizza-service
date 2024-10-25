@@ -43,7 +43,7 @@ async function createMenuItem() {
 let adminUser;
 let fullMenu;
 
-beforeAll(async () => {
+beforeEach(async () => {
     adminUser = await createAdminUser();
     const loginRes = await request(app).put('/api/auth').send(adminUser);
 
