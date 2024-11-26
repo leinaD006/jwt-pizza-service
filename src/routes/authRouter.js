@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config.js');
 const { asyncHandler } = require('../endpointHelper.js');
 const { DB, Role } = require('../database/database.js');
+const metrics = require('../metrics.js');
 
 const authRouter = express.Router();
 
@@ -12,14 +13,20 @@ authRouter.endpoints = [
     path: '/api/auth',
     description: 'Register a new user',
     example: `curl -X POST localhost:3000/api/auth -d '{"name":"pizza diner", "email":"d@jwt.com", "password":"diner"}' -H 'Content-Type: application/json'`,
-    response: { user: { id: 2, name: 'pizza diner', email: 'd@jwt.com', roles: [{ role: 'diner' }] }, token: 'tttttt' },
+    response: {
+      user: { id: 2, name: 'pizza diner', email: 'd@jwt.com', roles: [{ role: 'diner' }] },
+      token: 'tttttt',
+    },
   },
   {
     method: 'PUT',
     path: '/api/auth',
     description: 'Login existing user',
     example: `curl -X PUT localhost:3000/api/auth -d '{"email":"a@jwt.com", "password":"admin"}' -H 'Content-Type: application/json'`,
-    response: { user: { id: 1, name: '常用名字', email: 'a@jwt.com', roles: [{ role: 'admin' }] }, token: 'tttttt' },
+    response: {
+      user: { id: 1, name: '常用名字', email: 'a@jwt.com', roles: [{ role: 'admin' }] },
+      token: 'tttttt',
+    },
   },
   {
     method: 'PUT',
@@ -58,8 +65,10 @@ async function setAuthUser(req, res, next) {
 // Authenticate token
 authRouter.authenticateToken = (req, res, next) => {
   if (!req.user) {
+    metrics.trackAuth(false);
     return res.status(401).send({ message: 'unauthorized' });
   }
+  metrics.trackAuth(true);
   next();
 };
 
@@ -69,11 +78,18 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
+      metrics.trackAuth(false);
       return res.status(400).json({ message: 'name, email, and password are required' });
     }
-    const user = await DB.addUser({ name, email, password, roles: [{ role: Role.Diner }] });
-    const auth = await setAuth(user);
-    res.json({ user: user, token: auth });
+    try {
+      const user = await DB.addUser({ name, email, password, roles: [{ role: Role.Diner }] });
+      const auth = await setAuth(user);
+      metrics.trackAuth(true);
+      res.json({ user: user, token: auth });
+    } catch (error) {
+      metrics.trackAuth(false);
+      throw error;
+    }
   })
 );
 
@@ -82,9 +98,15 @@ authRouter.put(
   '/',
   asyncHandler(async (req, res) => {
     const { email, password } = req.body;
-    const user = await DB.getUser(email, password);
-    const auth = await setAuth(user);
-    res.json({ user: user, token: auth });
+    try {
+      const user = await DB.getUser(email, password);
+      const auth = await setAuth(user);
+      metrics.trackAuth(true);
+      res.json({ user: user, token: auth });
+    } catch (error) {
+      metrics.trackAuth(false);
+      throw error;
+    }
   })
 );
 
@@ -93,8 +115,14 @@ authRouter.delete(
   '/',
   authRouter.authenticateToken,
   asyncHandler(async (req, res) => {
-    await clearAuth(req);
-    res.json({ message: 'logout successful' });
+    try {
+      await clearAuth(req);
+      metrics.trackAuth(true); // Successful logout
+      res.json({ message: 'logout successful' });
+    } catch (error) {
+      metrics.trackAuth(false);
+      throw error;
+    }
   })
 );
 
@@ -106,12 +134,20 @@ authRouter.put(
     const { email, password } = req.body;
     const userId = Number(req.params.userId);
     const user = req.user;
+
     if (user.id !== userId && !user.isRole(Role.Admin)) {
+      metrics.trackAuth(false);
       return res.status(403).json({ message: 'unauthorized' });
     }
 
-    const updatedUser = await DB.updateUser(userId, email, password);
-    res.json(updatedUser);
+    try {
+      const updatedUser = await DB.updateUser(userId, email, password);
+      metrics.trackAuth(true);
+      res.json(updatedUser);
+    } catch (error) {
+      metrics.trackAuth(false);
+      throw error;
+    }
   })
 );
 
