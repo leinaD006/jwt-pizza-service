@@ -25,7 +25,7 @@ class MetricBuilder {
 class Metrics {
   constructor() {
     this.httpRequests = new Map(); // Track request counts by method
-    this.activeUsers = new Set(); // Track unique active users
+    this.activeUsers = 0;
     this.authAttempts = { success: 0, failure: 0 }; // Track auth attempts
     this.pizzaMetrics = { sold: 0, failures: 0, revenue: 0 }; // Track pizza metrics
     this.latencyData = [];
@@ -43,11 +43,6 @@ class Metrics {
     const current = this.httpRequests.get(req.method) || 0;
     this.httpRequests.set(req.method, current + 1);
 
-    // Track user if authenticated
-    if (req.user) {
-      this.activeUsers.add(req.user.id);
-    }
-
     // Track latency after response
     res.on('finish', () => {
       const duration = Date.now() - startTime;
@@ -63,6 +58,17 @@ class Metrics {
       this.authAttempts.success++;
     } else {
       this.authAttempts.failure++;
+    }
+  }
+
+  trackActiveUser(action) {
+    if (action === 'login') {
+      this.activeUsers++;
+    } else if (action === 'logout') {
+      this.activeUsers--;
+      if (this.activeUsers < 0) {
+        this.activeUsers = 0;
+      }
     }
   }
 
@@ -127,8 +133,7 @@ class Metrics {
     // this.httpRequests.clear();
 
     // Active users
-    builder.addMetric('users', 'active', this.activeUsers.size);
-    this.activeUsers.clear();
+    builder.addMetric('users', 'active', this.activeUsers);
 
     // Authentication
     builder.addMetric('auth', 'attempts_success', this.authAttempts.success);

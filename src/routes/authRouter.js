@@ -102,6 +102,7 @@ authRouter.put(
       const user = await DB.getUser(email, password);
       const auth = await setAuth(user);
       metrics.trackAuth(true);
+      metrics.trackActiveUser('login');
       res.json({ user: user, token: auth });
     } catch (error) {
       metrics.trackAuth(false);
@@ -118,6 +119,7 @@ authRouter.delete(
     try {
       await clearAuth(req);
       metrics.trackAuth(true); // Successful logout
+      metrics.trackActiveUser('logout');
       res.json({ message: 'logout successful' });
     } catch (error) {
       metrics.trackAuth(false);
